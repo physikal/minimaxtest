@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Pulse - Home Game Coordinator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card-bg: #161b22;
+            --primary: #ff6b35;
+            --secondary: #2ecc71;
+            --tertiary: #9b59b6;
+            --text: #f0f6fc;
+            --text-muted: #8b949e;
+            --border: #30363d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans 3', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 107, 53, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(46, 204, 113, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(155, 89, 182, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            padding: 0 24px;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 3px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), #ff8c5a);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .nav-btn:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+        }
+
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 96px 24px 48px;
+        }
+
+        /* Hero section */
+        .hero {
+            text-align: center;
+            margin-bottom: 48px;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(36px, 8vw, 64px);
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--text), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 18px;
+            max-width: 500px;
+            margin: 0 auto 24px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Tab buttons */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
+            animation: fadeIn 0.6s ease 0.2s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s ease;
+            position: relative;
+            top: 1px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-bottom: 1px solid var(--card-bg);
+        }
+
+        /* Tab content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Games grid */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
+        }
+
+        /* Game card */
+        .game-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+            animation: cardReveal 0.5s ease both;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            border-color: var(--primary);
+        }
+
+        .game-card:hover::before {
+            opacity: 1;
+        }
+
+        @keyframes cardReveal {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .game-card:nth-child(1) { animation-delay: 0.1s; }
+        .game-card:nth-child(2) { animation-delay: 0.2s; }
+        .game-card:nth-child(3) { animation-delay: 0.3s; }
+        .game-card:nth-child(4) { animation-delay: 0.4s; }
+        .game-card:nth-child(5) { animation-delay: 0.5s; }
+        .game-card:nth-child(6) { animation-delay: 0.6s; }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .game-type {
+            background: rgba(155, 89, 182, 0.2);
+            color: var(--tertiary);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .game-date {
+            background: var(--primary);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .game-date .day {
+            font-size: 18px;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+            display: block;
+            line-height: 1;
+        }
+
+        .game-date .month {
+            font-size: 10px;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        .game-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .game-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .game-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .game-meta-item svg {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+
+        .game-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .player-count {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .player-count .count {
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--secondary);
+        }
+
+        .status-dot.pending { background: #f1c40f; }
+        .status-dot.declined { background: #e74c3c; }
+
+        .game-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Create game form */
+        .form-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 600px;
+            margin: 0 auto;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .form-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 1px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: inherit;
+            font-size: 15px;
+            color: var(--text);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-submit {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 64px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            letter-spacing: 1px;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            margin-bottom: 24px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            padding: 24px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 1px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .rsvp-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .rsvp-btn {
+            flex: 1;
+            padding: 16px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .rsvp-btn:hover {
+            border-color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .rsvp-btn.going {
+            border-color: var(--secondary);
+            color: var(--secondary);
+        }
+
+        .rsvp-btn.going.selected, .rsvp-btn.going:hover {
+            background: var(--secondary);
+            color: #fff;
+        }
+
+        .rsvp-btn.cant-go {
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .rsvp-btn.cant-go.selected, .rsvp-btn.cant-go:hover {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .rsvp-btn.maybe {
+            border-color: #f1c40f;
+            color: #f1c40f;
+        }
+
+        .rsvp-btn.maybe.selected, .rsvp-btn.maybe:hover {
+            background: #f1c40f;
+            color: #000;
+        }
+
+        .rsvp-btn .emoji {
+            font-size: 24px;
+        }
+
+        /* Invite section */
+        .invite-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .invite-section h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .invite-form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .invite-input {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .invite-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .guest-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .guest-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: var(--bg);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .guest-status {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .guest-status.pending {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f1c40f;
+        }
+
+        .guest-status.confirmed {
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--secondary);
+        }
+
+        .guest-status.declined {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+
+        /* Toast notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .toast.success { border-left: 3px solid var(--secondary); }
+        .toast.error { border-left: 3px solid #e74c3c; }
+        .toast.info { border-left: 3px solid var(--primary); }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-muted);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 48px;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .stats {
+                gap: 24px;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .rsvp-buttons {
+                flex-direction: column;
+            }
+
+            .modal {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <div class="logo">
+                <div class="logo-icon">♠</div>
+                POKER PULSE
+            </div>
+            <div class="nav-links">
+                <button class="nav-btn active" data-tab="games">Games</button>
+                <button class="nav-btn" data-tab="create">Create Game</button>
+                <button class="nav-btn" data-tab="rsvps">My RSVPs</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section class="hero">
+            <h1>Home Poker Coordinator</h1>
+            <p>Organize your home games, invite friends, and track RSVPs — all in one place.</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="totalGames">0</div>
+                    <div class="stat-label">Total Games</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="upcomingGames">0</div>
+                    <div class="stat-label">Upcoming</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="totalPlayers">0</div>
+                    <div class="stat-label">Players</div>
+                </div>
+            </div>
+        </section>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="games">Upcoming Games</button>
+            <button class="tab-btn" data-tab="create">Create Game</button>
+            <button class="tab-btn" data-tab="rsvps">My RSVPs</button>
+        </div>
+
+        <div id="games" class="tab-content active">
+            <div class="games-grid" id="gamesGrid"></div>
+        </div>
+
+        <div id="create" class="tab-content">
+            <div class="form-card">
+                <h2 class="form-title">Create New Game</h2>
+                <form id="createGameForm">
+                    <div class="form-group">
+                        <label class="form-label">Game Name</label>
+                        <input type="text" class="form-input" id="gameName" placeholder="Friday Night Poker" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-input" id="gameDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Time</label>
+                            <input type="time" class="form-input" id="gameTime" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Location</label>
+                        <input type="text" class="form-input" id="gameLocation" placeholder="123 Main St, City" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Max Players</label>
+                            <select class="form-select" id="maxPlayers">
+                                <option value="2">2 players</option>
+                                <option value="4">4 players</option>
+                                <option value="6" selected>6 players</option>
+                                <option value="8">8 players</option>
+                                <option value="10">10 players</option>
+                                <option value="20">20 players</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Buy-in</label>
+                            <input type="text" class="form-input" id="buyIn" placeholder="$50">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Game Type</label>
+                        <select class="form-select" id="gameType">
+                            <option value="Texas Hold'em" selected>Texas Hold'em</option>
+                            <option value="Omaha">Omaha</option>
+                            <option value="Mixed">Mixed</option>
+                            <option value="Five Card Draw">Five Card Draw</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-textarea" id="gameNotes" placeholder="Any special rules or notes..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary form-submit">Create Game</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="rsvps" class="tab-content">
+            <div id="rsvpList"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="rsvpModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">RSVP</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <footer>
+        <p>♠ Poker Pulse — Coordinate your home games</p>
+    </footer>
+
+    <script>
+        const STORAGE_KEY = 'pokerPulseData';
+        let currentUser = 'You';
+        let games = [];
+
+        function init() {
+            loadData();
+            setupEventListeners();
+            renderGames();
+            updateStats();
+            renderMyRsvps();
+            
+            const dateInput = document.getElementById('gameDate');
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.min = today;
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                games = JSON.parse(saved);
+            } else {
+                seedDemoData();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(games));
+            updateStats();
+        }
+
+        function seedDemoData() {
+            const today = new Date();
+            const demoGames = [
+                {
+                    id: generateId(),
+                    name: 'Friday Night Hold\'em',
+                    date: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                    time: '20:00',
+                    location: '123 Poker Street, Las Vegas, NV',
+                    maxPlayers: 8,
+                    buyIn: '$100',
+                    type: 'Texas Hold\'em',
+                    notes: 'Deep stack tourney, 10k starting',
+                    host: 'You',
+                    rsvps: [
+                        { name: 'Alice', status: 'going' },
+                        { name: 'Bob', status: 'going' },
+                        { name: 'Charlie', status: 'pending' }
+                    ],
+                    invites: []
+                },
+                {
+                    id: generateId(),
+                    name: 'Sunday Omaha Cash',
+                    date: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                    time: '14:00',
+                    location: '456 Card Ave, Los Angeles, CA',
+                    maxPlayers: 6,
+                    buyIn: '$50',
+                    type: 'Omaha',
+                    notes: 'Cash game, 1/2 blinds',
+                    host: 'Mike',
+                    rsvps: [
+                        { name: 'You', status: 'going' },
+                        { name: 'Mike', status: 'going' }
+                    ],
+                    invites: ['mike@example.com']
+                }
+            ];
+            games = demoGames;
+            saveData();
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(btn.dataset.tab).classList.add('active');
+                });
+            });
+
+            document.getElementById('createGameForm').addEventListener('submit', handleCreateGame);
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('rsvpModal').addEventListener('click', (e) => {
+                if (e.target.id === 'rsvpModal') closeModal();
+            });
+        }
+
+        function handleCreateGame(e) {
+            e.preventDefault();
+            
+            const newGame = {
+                id: generateId(),
+                name: document.getElementById('gameName').value,
+                date: document.getElementById('gameDate').value,
+                time: document.getElementById('gameTime').value,
+                location: document.getElementById('gameLocation').value,
+                maxPlayers: parseInt(document.getElementById('maxPlayers').value),
+                buyIn: document.getElementById('buyIn').value || 'Free',
+                type: document.getElementById('gameType').value,
+                notes: document.getElementById('gameNotes').value,
+                host: 'You',
+                rsvps: [{ name: 'You', status: 'going' }],
+                invites: []
+            };
+
+            games.push(newGame);
+            saveData();
+            renderGames();
+            renderMyRsvps();
+            
+            e.target.reset();
+            showToast('Game created successfully!', 'success');
+            
+            document.querySelectorAll('.tab-btn')[0].click();
+        }
+
+        function renderGames() {
+            const grid = document.getElementById('gamesGrid');
+            const upcomingGames = games.filter(g => new Date(g.date) >= new Date().setHours(0,0,0,0));
+
+            if (upcomingGames.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">♠️</div>
+                        <h3>No Upcoming Games</h3>
+                        <p>Create your first poker game to get started!</p>
+                        <button class="btn btn-primary" onclick="document.querySelectorAll('.tab-btn')[1].click()">Create Game</button>
+                    </div>
+                `;
+                return;
+            }
+
+            upcomingGames.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            grid.innerHTML = upcomingGames.map((game, index) => {
+                const confirmedCount = game.rsvps.filter(r => r.status === 'going').length;
+                const dateObj = new Date(game.date);
+                const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                
+                return `
+                    <div class="game-card" data-game-id="${game.id}" style="animation-delay: ${index * 0.1}s">
+                        <div class="game-header">
+                            <span class="game-type">${game.type}</span>
+                            <div class="game-date">
+                                <span class="day">${dateObj.getDate()}</span>
+                                <span class="month">${months[dateObj.getMonth()]}</span>
+                            </div>
+                        </div>
+                        <h3 class="game-title">${game.name}</h3>
+                        <div class="game-meta">
+                            <div class="game-meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                ${formatTime(game.time)}
+                            </div>
+                            <div class="game-meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                ${game.location}
+                            </div>
+                            <div class="game-meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                Host: ${game.host}
+                            </div>
+                            ${game.buyIn ? `<div class="game-meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                Buy-in: ${game.buyIn}
+                            </div>` : ''}
+                        </div>
+                        <div class="game-footer">
+                            <div class="player-count">
+                                <span class="count">${confirmedCount}/${game.maxPlayers}</span>
+                                <span class="status-dot ${confirmedCount >= game.maxPlayers ? '' : 'pending'}"></span>
+                                <span>confirmed</span>
+                            </div>
+                            <div class="game-actions">
+                                <button class="btn btn-secondary" onclick="event.stopPropagation(); openRsvpModal('${game.id}')">RSVP</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderMyRsvps() {
+            const container = document.getElementById('rsvpList');
+            const myRsvps = games.filter(g => g.rsvps.some(r => r.name === 'You'));
+
+            if (myRsvps.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <h3>No RSVPs Yet</h3>
+                        <p>RSVP to games to see them here.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="games-grid">
+                    ${myRsvps.map(game => {
+                        const myRsvp = game.rsvps.find(r => r.name === 'You');
+                        const statusColors = {
+                            'going': 'var(--secondary)',
+                            'pending': '#f1c40f',
+                            'cant-go': '#e74c3c'
+                        };
+                        const statusLabels = {
+                            'going': '✅ Going',
+                            'pending': '⏳ Pending',
+                            'cant-go': '❌ Can\'t Go'
+                        };
+                        
+                        return `
+                            <div class="game-card">
+                                <div class="game-header">
+                                    <span class="game-type">${game.type}</span>
+                                    <span style="color: ${statusColors[myRsvp.status]}; font-weight: 600;">${statusLabels[myRsvp.status]}</span>
+                                </div>
+                                <h3 class="game-title">${game.name}</h3>
+                                <div class="game-meta">
+                                    <div class="game-meta-item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        ${game.date} at ${formatTime(game.time)}
+                                    </div>
+                                    <div class="game-meta-item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                        ${game.location}
+                                    </div>
+                                </div>
+                                <div class="game-footer">
+                                    <div class="player-count">
+                                        Host: ${game.host}
+                                    </div>
+                                    <button class="btn btn-primary" onclick="openRsvpModal('${game.id}')">Update RSVP</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function openRsvpModal(gameId) {
+            const game = games.find(g => g.id === gameId);
+            if (!game) return;
+
+            const confirmedCount = game.rsvps.filter(r => r.status === 'going').length;
+            const isFull = confirmedCount >= game.maxPlayers;
+
+            document.getElementById('modalTitle').textContent = game.name;
+            document.getElementById('modalTitle').dataset.gameId = gameId;
+
+            const myRsvp = game.rsvps.find(r => r.name === currentUser);
+
+            document.getElementById('modalContent').innerHTML = `
+                <p style="color: var(--text-muted); margin-bottom: 20px;">${game.date} at ${formatTime(game.time)} • ${game.location}</p>
+                
+                <div class="rsvp-buttons">
+                    <button class="rsvp-btn going ${myRsvp?.status === 'going' ? 'selected' : ''}" 
+                            onclick="submitRsvp('${game.id}', 'going')" ${isFull && myRsvp?.status !== 'going' ? 'style="opacity:0.5;cursor:not-allowed"' : ''}>
+                        <span class="emoji">✅</span>
+                        Going
+                    </button>
+                    <button class="rsvp-btn cant-go ${myRsvp?.status === 'cant-go' ? 'selected' : ''}" 
+                            onclick="submitRsvp('${game.id}', 'cant-go')">
+                        <span class="emoji">❌</span>
+                        Can't Go
+                    </button>
+                    <button class="rsvp-btn maybe ${myRsvp?.status === 'pending' ? 'selected' : ''}" 
+                            onclick="submitRsvp('${game.id}', 'pending')">
+                        <span class="emoji">⏳</span>
+                        Maybe
+                    </button>
+                </div>
+
+                <div class="invite-section">
+                    <h4>Invite Players</h4>
+                    <div class="invite-form">
+                        <input type="email" class="invite-input" id="inviteEmail" placeholder="friend@email.com">
+                        <button class="btn btn-secondary" onclick="addInvite('${game.id}')">Add</button>
+                    </div>
+                    <div class="guest-list">
+                        ${game.invites.map(email => `
+                            <div class="guest-item">
+                                <span>${email}</span>
+                                <span class="guest-status pending">pending</span>
+                            </div>
+                        `).join('')}
+                        ${game.rsvps.filter(r => r.name !== 'You').map(rsvp => `
+                            <div class="guest-item">
+                                <span>${rsvp.name}</span>
+                                <span class="guest-status ${rsvp.status === 'going' ? 'confirmed' : rsvp.status === 'cant-go' ? 'declined' : 'pending'}">
+                                    ${rsvp.status === 'going' ? 'confirmed' : rsvp.status === 'cant-go' ? 'declined' : 'pending'}
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${game.invites.length > 0 ? `<button class="btn btn-primary" style="width: 100%; margin-top: 16px;" onclick="sendInvites('${game.id}')">Send Invites</button>` : ''}
+                </div>
+            `;
+
+            document.getElementById('rsvpModal').classList.add('active');
+        }
+
+        function submitRsvp(gameId, status) {
+            const game = games.find(g => g.id === gameId);
+            if (!game) return;
+
+            const existingRsvp = game.rsvps.find(r => r.name === currentUser);
+            if (existingRsvp) {
+                existingRsvp.status = status;
+            } else {
+                game.rsvps.push({ name: currentUser, status });
+            }
+
+            saveData();
+            renderGames();
+            renderMyRsvps();
+            openRsvpModal(gameId);
+            
+            const statusText = status === 'going' ? 'Going' : status === 'cant-go' ? 'Can\'t Go' : 'Maybe';
+            showToast(`RSVP updated to: ${statusText}`, 'success');
+        }
+
+        function addInvite(gameId) {
+            const game = games.find(g => g.id === gameId);
+            if (!game) return;
+
+            const emailInput = document.getElementById('inviteEmail');
+            const email = emailInput.value.trim();
+
+            if (!email || !isValidEmail(email)) {
+                showToast('Please enter a valid email', 'error');
+                return;
+            }
+
+            if (game.invites.includes(email)) {
+                showToast('Email already invited', 'error');
+                return;
+            }
+
+            game.invites.push(email);
+            emailInput.value = '';
+            saveData();
+            openRsvpModal(gameId);
+            showToast('Guest added to invite list', 'success');
+        }
+
+        function sendInvites(gameId) {
+            const game = games.find(g => g.id === gameId);
+            if (!game || game.invites.length === 0) return;
+
+            const gameUrl = window.location.href;
+            const subject = `You're invited to ${game.name}!`;
+            const body = `Join us for poker!\n\nGame: ${game.name}\nDate: ${game.date}\nTime: ${formatTime(game.time)}\nLocation: ${game.location}\nBuy-in: ${game.buyIn}\n\nRSVP here: ${gameUrl}`;
+            
+            window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+            showToast('Email invite prepared!', 'info');
+        }
+
+        function closeModal() {
+            document.getElementById('rsvpModal').classList.remove('active');
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function formatTime(time) {
+            if (!time) return '';
+            const [hours, minutes] = time.split(':');
+            const h = parseInt(hours);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const hour12 = h % 12 || 12;
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        function updateStats() {
+            const upcoming = games.filter(g => new Date(g.date) >= new Date().setHours(0,0,0,0));
+            const totalPlayers = upcoming.reduce((sum, g) => sum + g.rsvps.filter(r => r.status === 'going').length, 0);
+
+            document.getElementById('totalGames').textContent = games.length;
+            document.getElementById('upcomingGames').textContent = upcoming.length;
+            document.getElementById('totalPlayers').textContent = totalPlayers;
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
