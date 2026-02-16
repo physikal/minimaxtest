@@ -1,10 +1,78 @@
-# Home Poker Game Coordinator - Specification
+# Poker Pulse - Technical Specification
 
 ## Project Overview
 - **Project name**: Poker Pulse
-- **Type**: Single-page web application
+- **Type**: Full-stack web application (Docker containerized)
 - **Core functionality**: Coordinate home poker games with email invites and RSVP tracking
 - **Target users**: Home poker game hosts and players
+- **Stack**: Fastify (Node.js), PostgreSQL, nginx, Docker
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Docker Compose                        │
+├─────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌───────────────┐   │
+│  │   Frontend  │  │  API Server │  │  PostgreSQL   │   │
+│  │   (nginx)   │◄─►│  (Fastify)  │◄─►│   Database    │   │
+│  └─────────────┘  └─────────────┘  └───────────────┘   │
+│         │                │                               │
+│         │         ┌──────┴──────┐                       │
+│         │         │  JWT Auth   │                       │
+│         │         │  Email Svc  │                       │
+│         │         │  WebSocket  │                       │
+│         │         └─────────────┘                       │
+└─────────────────────────────────────────────────────────┘
+```
+
+## API Endpoints
+
+### Authentication (POST /api/auth)
+- `POST /auth/register` - Create account
+- `POST /auth/login` - Get JWT token
+- `GET /auth/me` - Get current user
+- `POST /auth/refresh` - Refresh token
+
+### Games (GET/POST/PUT/DELETE /api/games)
+- `GET /games` - List games
+- `GET /games/my` - Games user is hosting
+- `GET /games/:id` - Get game details
+- `POST /games` - Create new game
+- `PUT /games/:id` - Update game
+- `DELETE /games/:id` - Cancel game
+
+### RSVP (GET/POST /api/games/:id)
+- `GET /games/:id/rsvps` - List all RSVPs
+- `POST /games/:id/rsvp` - Submit RSVP
+- `GET /games/:id/rsvp/me` - Current user's RSVP
+
+### Invites (POST/GET /api/invites)
+- `POST /games/:id/invites` - Send invites
+- `GET /invites/token/:token` - Get invite details
+- `POST /invites/token/:token/respond` - Accept/decline
+
+### Users (GET/PUT /api/users)
+- `GET /users/me` - Get profile
+- `PUT /users/me` - Update profile
+- `GET /users/me/games` - Games user is attending
+
+## Database Schema
+
+### Users
+- id (UUID), email, password_hash, display_name, avatar_url, created_at, updated_at
+
+### Games
+- id (UUID), host_id (FK), name, date, time, location, max_players, buy_in, game_type, notes, is_public, status, created_at, updated_at
+
+### RSVPs
+- id (UUID), game_id (FK), user_id (FK), status, message, created_at, updated_at
+
+### Invites
+- id (UUID), game_id (FK), host_id (FK), email, token, status, created_at, expires_at
+
+### Waitlist
+- id (UUID), game_id (FK), user_id (FK), position, created_at
 
 ## UI/UX Specification
 
@@ -14,14 +82,7 @@
 - **Main content**: Tab-based interface (Upcoming Games, Create Game, My RSVPs)
 - **Footer**: Copyright, links
 
-### Responsive Breakpoints
-- Mobile: < 640px (single column)
-- Tablet: 640px - 1024px (two columns)
-- Desktop: > 1024px (three columns for games grid)
-
-### Visual Design
-
-#### Color Palette
+### Color Palette
 - **Background**: #0d1117 (deep charcoal)
 - **Card background**: #161b22 (dark slate)
 - **Primary accent**: #ff6b35 (poker orange)
@@ -31,111 +92,63 @@
 - **Text secondary**: #8b949e (muted gray)
 - **Border**: #30363d (subtle gray)
 
-#### Typography
-- **Headings**: "Bebas Neue", sans-serif (bold, impactful)
+### Typography
+- **Headings**: "Bebas Neue", sans-serif
 - **Body**: "Source Sans 3", sans-serif
 - **Logo/Brand**: "Bebas Neue" with letter-spacing
 
-#### Spacing System
-- Base unit: 8px
-- Card padding: 24px
-- Section gaps: 32px
-- Element gaps: 16px
-
-#### Visual Effects
-- Card hover: translateY(-4px) with box-shadow expansion
-- Button hover: brightness increase + slight scale
-- Tab transitions: 0.3s ease
-- Staggered card reveals on load (animation-delay increments)
-- Subtle card inner glow effect
-
 ### Components
+- Navigation Bar with glass-morphism
+- Game Card with date badge, host info, player count
+- Create Game Form with validation
+- RSVP Modal with Going/Can't Go/Maybe buttons
+- Auth Modal for login/register
+- Toast notifications
 
-#### Navigation Bar
-- Fixed top, glass-morphism effect (backdrop-filter: blur)
-- Logo left, nav links right
-- Active state: orange underline
+## Functionality
 
-#### Game Card
-- Date/time badge (top right corner, accent color)
-- Game title (large, bold)
-- Host name with avatar placeholder
-- Location (address)
-- Player count: "X/Y confirmed"
-- RSVP status indicator (dot: green=confirmed, yellow=pending, red=declined)
-- Action buttons: View Details, RSVP
+### Authentication
+- JWT-based authentication
+- Secure password hashing with bcrypt
+- Token stored in localStorage
+- Protected routes on frontend
 
-#### Create Game Form
-- Game name input
-- Date picker
-- Time picker
-- Location input (address)
-- Max players dropdown (2-20)
-- Buy-in amount input
-- Game type dropdown (Texas Hold'em, Omaha, Mixed)
-- Notes textarea
-- Submit button with loading state
+### Game Management
+- Create, read, update, delete games
+- Host-only modifications
+- Public/private game visibility
 
-#### RSVP Modal
-- Player name display
-- Status buttons: ✅ Going, ❌ Can't Go, ⏳ Maybe
-- Optional message field
-- Confirmation message on submit
+### RSVP System
+- Three states: going, pending, can't-go
+- Real-time updates via WebSocket
+- Max player enforcement
 
-#### Invite Section (per game)
-- Email input field
-- Add guest button
-- Guest list with status badges
-- "Send Invites" button
+### Email Invites
+- Nodemailer integration
+- Configurable SMTP
+- Unique invite tokens
+- 7-day expiration
 
-## Functionality Specification
+### Real-time Updates
+- WebSocket connection
+- Events: game:created, game:updated, game:cancelled, rsvp:updated
+- Toast notifications for updates
 
-### Core Features
-
-1. **Game Creation**
-   - Form validation (all required fields)
-   - Save to localStorage
-   - Generate unique game ID
-
-2. **Game Listing**
-   - Display all upcoming games sorted by date
-   - Show game details on click
-   - Filter: All / Hosted by me / Invited to
-
-3. **Email Invites**
-   - Add email addresses to guest list
-   - Store invites with game
-   - Display guest status
-
-4. **RSVP System**
-   - Three states: Going, Can't Go, Maybe
-   - Update game player count dynamically
-   - Persist to localStorage
-
-5. **Data Persistence**
-   - All data stored in localStorage
-   - Demo data seeded on first load
-
-### User Interactions
-- Click game card → expand details / show RSVP modal
-- Tab navigation between sections
-- Form submission with validation feedback
-- Toast notifications for actions
-
-### Edge Cases
-- No games: Show empty state with CTA
-- Past games: Show in separate "Past Games" section or dimmed
-- Max players reached: Disable "Going" RSVP option
-- Invalid email format: Show inline error
+## Environment Variables
+- DATABASE_URL
+- JWT_SECRET
+- SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+- EMAIL_FROM
+- NODE_ENV
+- PORT
+- FRONTEND_URL
 
 ## Acceptance Criteria
-1. ✅ Page loads without errors
-2. ✅ Can create a new poker game with all fields
-3. ✅ Game appears in listing after creation
-4. ✅ Can RSVP to a game (Going/Can't Go/Maybe)
-5. ✅ Player count updates based on RSVP
-6. ✅ Can add email invites to a game
-7. ✅ Data persists across page refreshes
-8. ✅ Responsive on mobile/tablet/desktop
-9. ✅ Animations are smooth and purposeful
-10. ✅ Empty states guide user to action
+1. Docker compose starts all services
+2. Can register and login
+3. Can create, view, update, cancel games
+4. Can RSVP to games
+5. Can send email invites
+6. Real-time updates work
+7. Responsive on mobile/tablet/desktop
+8. Animations are smooth

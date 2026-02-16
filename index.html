@@ -819,24 +819,202 @@
                 padding: 24px;
             }
         }
+        /* Auth buttons */
+        .auth-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Auth modal */
+        .auth-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .auth-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .auth-error {
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Invite link page */
+        .invite-page {
+            max-width: 500px;
+            margin: 100px auto;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .invite-page h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+        }
+
+        .invite-page .game-info {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            text-align: left;
+        }
+
+        .invite-page .game-info p {
+            margin: 8px 0;
+            color: var(--text-muted);
+        }
+
+        .invite-page .game-info strong {
+            color: var(--text);
+        }
+
+        .invite-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 24px;
+        }
+
+        .invite-page.hidden { display: none; }
+        .main-content.hidden { display: none; }
     </style>
 </head>
 <body>
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="authTitle">Welcome</h3>
+                <button class="modal-close" id="closeAuthModal">&times;</button>
+            </div>
+            <div id="authError"></div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-auth="login">Login</button>
+                <button class="auth-tab" data-auth="register">Register</button>
+            </div>
+            <form id="authForm">
+                <div class="form-group" id="displayNameGroup" style="display: none;">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" class="form-input" id="authDisplayName" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="authEmail" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="authPassword" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary form-submit" id="authSubmit">Login</button>
+            </form>
+        </div>
+    </div>
+
     <nav>
         <div class="nav-content">
             <div class="logo">
                 <div class="logo-icon">♠</div>
                 POKER PULSE
             </div>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <button class="nav-btn active" data-tab="games">Games</button>
                 <button class="nav-btn" data-tab="create">Create Game</button>
                 <button class="nav-btn" data-tab="rsvps">My RSVPs</button>
             </div>
+            <div id="authSection"></div>
         </div>
     </nav>
 
-    <div class="container">
+    <div class="main-content" id="mainContent">
         <section class="hero">
             <h1>Home Poker Coordinator</h1>
             <p>Organize your home games, invite friends, and track RSVPs — all in one place.</p>
@@ -945,148 +1123,318 @@
     </footer>
 
     <script>
-        const STORAGE_KEY = 'pokerPulseData';
-        let currentUser = 'You';
-        let games = [];
+        // API Configuration
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3000'
+            : '/api';
 
-        function init() {
-            loadData();
+        // State
+        let currentUser = null;
+        let token = localStorage.getItem('pokerPulseToken');
+        let games = [];
+        let ws = null;
+
+        // DOM Elements
+        const mainContent = document.getElementById('mainContent');
+
+        // Initialize
+        async function init() {
             setupEventListeners();
-            renderGames();
-            updateStats();
-            renderMyRsvps();
-            
+
+            // Check for invite token in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteToken = urlParams.get('invite');
+
+            if (inviteToken) {
+                await handleInvitePage(inviteToken);
+                return;
+            }
+
+            // Check auth
+            if (token) {
+                await checkAuth();
+            } else {
+                renderGuestView();
+            }
+
+            // Set minimum date for forms
             const dateInput = document.getElementById('gameDate');
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.min = today;
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.min = today;
+            }
         }
 
-        function loadData() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                games = JSON.parse(saved);
-            } else {
+        // Auth functions
+        async function checkAuth() {
+            try {
+                const res = await fetch(`${API_BASE}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    currentUser = await res.json();
+                    renderAuthenticatedView();
+                    await loadGames();
+                    connectWebSocket();
+                } else {
+                    logout();
+                }
+            } catch (err) {
+                console.error('Auth check failed:', err);
+                renderGuestView();
+            }
+        }
+
+        function showAuthModal(mode = 'login') {
+            document.getElementById('authModal').classList.add('active');
+            document.getElementById('authTitle').textContent = mode === 'login' ? 'Login' : 'Create Account';
+            document.getElementById('authSubmit').textContent = mode === 'login' ? 'Login' : 'Create Account';
+            document.getElementById('displayNameGroup').style.display = mode === 'register' ? 'block' : 'none';
+            document.querySelectorAll('.auth-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.auth === mode);
+            });
+            document.getElementById('authError').innerHTML = '';
+        }
+
+        function hideAuthModal() {
+            document.getElementById('authModal').classList.remove('active');
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const isRegister = document.querySelector('.auth-tab.active').dataset.auth === 'register';
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const displayName = document.getElementById('authDisplayName').value;
+
+            const endpoint = isRegister ? '/auth/register' : '/auth/login';
+            const body = isRegister ? { email, password, displayName } : { email, password };
+
+            try {
+                const res = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    document.getElementById('authError').innerHTML = `<div class="auth-error">${data.error || 'Authentication failed'}</div>`;
+                    return;
+                }
+
+                token = data.token;
+                currentUser = data.user;
+                localStorage.setItem('pokerPulseToken', token);
+
+                hideAuthModal();
+                renderAuthenticatedView();
+                await loadGames();
+                connectWebSocket();
+                showToast(isRegister ? 'Welcome to Poker Pulse!' : 'Logged in successfully', 'success');
+            } catch (err) {
+                document.getElementById('authError').innerHTML = '<div class="auth-error">Connection failed. Please try again.</div>';
+            }
+        }
+
+        function logout() {
+            token = null;
+            currentUser = null;
+            localStorage.removeItem('pokerPulseToken');
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            renderGuestView();
+            games = [];
+            renderGames();
+            updateStats();
+            showToast('Logged out successfully', 'info');
+        }
+
+        // WebSocket
+        function connectWebSocket() {
+            if (ws) return;
+
+            const wsUrl = API_BASE.replace('http', 'ws') + '/ws';
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                if (token) {
+                    ws.send(JSON.stringify({ type: 'auth', token }));
+                }
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    handleWebSocketMessage(msg);
+                } catch (err) {
+                    console.error('WS message error:', err);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                ws = null;
+                // Reconnect after 5s
+                setTimeout(connectWebSocket, 5000);
+            };
+
+            ws.onerror = (err) => {
+                console.error('WebSocket error:', err);
+            };
+        }
+
+        function handleWebSocketMessage(msg) {
+            switch (msg.type) {
+                case 'game:created':
+                case 'game:updated':
+                case 'game:cancelled':
+                    loadGames();
+                    break;
+                case 'rsvp:updated':
+                    loadGames();
+                    break;
+            }
+        }
+
+        // API functions
+        async function loadGames() {
+            try {
+                const res = await fetch(`${API_BASE}/games`);
+                if (res.ok) {
+                    games = await res.json();
+                    renderGames();
+                    updateStats();
+                    renderMyRsvps();
+                }
+            } catch (err) {
+                console.error('Failed to load games:', err);
+                // Fallback to demo data if API fails
                 seedDemoData();
             }
         }
 
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(games));
-            updateStats();
-        }
+        async function createGame(gameData) {
+            try {
+                const res = await fetch(`${API_BASE}/games`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(gameData)
+                });
 
-        function seedDemoData() {
-            const today = new Date();
-            const demoGames = [
-                {
-                    id: generateId(),
-                    name: 'Friday Night Hold\'em',
-                    date: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                    time: '20:00',
-                    location: '123 Poker Street, Las Vegas, NV',
-                    maxPlayers: 8,
-                    buyIn: '$100',
-                    type: 'Texas Hold\'em',
-                    notes: 'Deep stack tourney, 10k starting',
-                    host: 'You',
-                    rsvps: [
-                        { name: 'Alice', status: 'going' },
-                        { name: 'Bob', status: 'going' },
-                        { name: 'Charlie', status: 'pending' }
-                    ],
-                    invites: []
-                },
-                {
-                    id: generateId(),
-                    name: 'Sunday Omaha Cash',
-                    date: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                    time: '14:00',
-                    location: '456 Card Ave, Los Angeles, CA',
-                    maxPlayers: 6,
-                    buyIn: '$50',
-                    type: 'Omaha',
-                    notes: 'Cash game, 1/2 blinds',
-                    host: 'Mike',
-                    rsvps: [
-                        { name: 'You', status: 'going' },
-                        { name: 'Mike', status: 'going' }
-                    ],
-                    invites: ['mike@example.com']
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error);
                 }
-            ];
-            games = demoGames;
-            saveData();
+
+                const game = await res.json();
+                games.unshift(game);
+                renderGames();
+                updateStats();
+                showToast('Game created successfully!', 'success');
+                return game;
+            } catch (err) {
+                showToast(err.message || 'Failed to create game', 'error');
+                throw err;
+            }
         }
 
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        function setupEventListeners() {
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+        async function submitRsvp(gameId, status, message = '') {
+            try {
+                const res = await fetch(`${API_BASE}/games/${gameId}/rsvp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status, message })
                 });
-            });
 
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    document.getElementById(btn.dataset.tab).classList.add('active');
-                });
-            });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error);
+                }
 
-            document.getElementById('createGameForm').addEventListener('submit', handleCreateGame);
-            document.getElementById('closeModal').addEventListener('click', closeModal);
-            document.getElementById('rsvpModal').addEventListener('click', (e) => {
-                if (e.target.id === 'rsvpModal') closeModal();
-            });
+                await loadGames();
+                const statusText = status === 'going' ? 'Going' : status === 'cant-go' ? 'Can\'t Go' : 'Maybe';
+                showToast(`RSVP updated to: ${statusText}`, 'success');
+            } catch (err) {
+                showToast(err.message || 'Failed to submit RSVP', 'error');
+            }
         }
 
-        function handleCreateGame(e) {
-            e.preventDefault();
-            
-            const newGame = {
-                id: generateId(),
-                name: document.getElementById('gameName').value,
-                date: document.getElementById('gameDate').value,
-                time: document.getElementById('gameTime').value,
-                location: document.getElementById('gameLocation').value,
-                maxPlayers: parseInt(document.getElementById('maxPlayers').value),
-                buyIn: document.getElementById('buyIn').value || 'Free',
-                type: document.getElementById('gameType').value,
-                notes: document.getElementById('gameNotes').value,
-                host: 'You',
-                rsvps: [{ name: 'You', status: 'going' }],
-                invites: []
-            };
+        async function sendInvites(gameId, emails) {
+            try {
+                const res = await fetch(`${API_BASE}/invites/game/${gameId}/invites`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ emails })
+                });
 
-            games.push(newGame);
-            saveData();
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error);
+                }
+
+                showToast('Invites sent successfully!', 'success');
+            } catch (err) {
+                showToast(err.message || 'Failed to send invites', 'error');
+            }
+        }
+
+        // Render functions
+        function renderGuestView() {
+            document.getElementById('authSection').innerHTML = `
+                <div class="auth-buttons">
+                    <button class="btn btn-secondary" onclick="showAuthModal('login')">Login</button>
+                    <button class="btn btn-primary" onclick="showAuthModal('register')">Register</button>
+                </div>
+            `;
+            document.getElementById('navLinks').style.display = 'none';
             renderGames();
-            renderMyRsvps();
-            
-            e.target.reset();
-            showToast('Game created successfully!', 'success');
-            
-            document.querySelectorAll('.tab-btn')[0].click();
+        }
+
+        function renderAuthenticatedView() {
+            const initials = currentUser.display_name
+                ? currentUser.display_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                : currentUser.email[0].toUpperCase();
+
+            document.getElementById('authSection').innerHTML = `
+                <div class="user-menu">
+                    <div class="user-avatar">${initials}</div>
+                    <span class="user-name">${currentUser.display_name || currentUser.email}</span>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            `;
+            document.getElementById('navLinks').style.display = 'flex';
         }
 
         function renderGames() {
-            const grid = document.getElementById('gamesGrid');
-            const upcomingGames = games.filter(g => new Date(g.date) >= new Date().setHours(0,0,0,0));
+            const container = document.getElementById('gamesGrid') || mainContent.querySelector('#gamesGrid');
+            if (!container) return;
+
+            const upcomingGames = games.filter(g => {
+                const gameDate = new Date(g.date);
+                return gameDate >= new Date().setHours(0, 0, 0, 0);
+            });
 
             if (upcomingGames.length === 0) {
-                grid.innerHTML = `
+                container.innerHTML = `
                     <div class="empty-state" style="grid-column: 1/-1;">
-                        <div class="empty-icon">♠️</div>
+                        <div class="empty-icon">♠</div>
                         <h3>No Upcoming Games</h3>
-                        <p>Create your first poker game to get started!</p>
-                        <button class="btn btn-primary" onclick="document.querySelectorAll('.tab-btn')[1].click()">Create Game</button>
+                        <p>${currentUser ? 'Create your first poker game to get started!' : 'Login to create and join games.'}</p>
+                        ${currentUser ? '<button class="btn btn-primary" onclick="document.querySelectorAll(\'.tab-btn\')[1].click()">Create Game</button>' : '<button class="btn btn-primary" onclick="showAuthModal(\'login\')">Login to Play</button>'}
                     </div>
                 `;
                 return;
@@ -1094,15 +1442,15 @@
 
             upcomingGames.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            grid.innerHTML = upcomingGames.map((game, index) => {
-                const confirmedCount = game.rsvps.filter(r => r.status === 'going').length;
+            container.innerHTML = upcomingGames.map((game, index) => {
+                const confirmedCount = game.going_count || 0;
                 const dateObj = new Date(game.date);
                 const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                
+
                 return `
                     <div class="game-card" data-game-id="${game.id}" style="animation-delay: ${index * 0.1}s">
                         <div class="game-header">
-                            <span class="game-type">${game.type}</span>
+                            <span class="game-type">${game.game_type}</span>
                             <div class="game-date">
                                 <span class="day">${dateObj.getDate()}</span>
                                 <span class="month">${months[dateObj.getMonth()]}</span>
@@ -1120,21 +1468,21 @@
                             </div>
                             <div class="game-meta-item">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                Host: ${game.host}
+                                Host: ${game.host_name || 'Unknown'}
                             </div>
-                            ${game.buyIn ? `<div class="game-meta-item">
+                            ${game.buy_in ? `<div class="game-meta-item">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                Buy-in: ${game.buyIn}
+                                Buy-in: ${game.buy_in}
                             </div>` : ''}
                         </div>
                         <div class="game-footer">
                             <div class="player-count">
-                                <span class="count">${confirmedCount}/${game.maxPlayers}</span>
-                                <span class="status-dot ${confirmedCount >= game.maxPlayers ? '' : 'pending'}"></span>
+                                <span class="count">${confirmedCount}/${game.max_players}</span>
+                                <span class="status-dot ${confirmedCount >= game.max_players ? '' : 'pending'}"></span>
                                 <span>confirmed</span>
                             </div>
                             <div class="game-actions">
-                                <button class="btn btn-secondary" onclick="event.stopPropagation(); openRsvpModal('${game.id}')">RSVP</button>
+                                ${currentUser ? `<button class="btn btn-secondary" onclick="event.stopPropagation(); openRsvpModal('${game.id}')">RSVP</button>` : '<button class="btn btn-secondary" onclick="showAuthModal(\'login\')">Login to RSVP</button>'}
                             </div>
                         </div>
                     </div>
@@ -1144,9 +1492,23 @@
 
         function renderMyRsvps() {
             const container = document.getElementById('rsvpList');
-            const myRsvps = games.filter(g => g.rsvps.some(r => r.name === 'You'));
+            if (!container) return;
 
-            if (myRsvps.length === 0) {
+            if (!currentUser) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <h3>Login Required</h3>
+                        <p>Login to see your RSVPs.</p>
+                        <button class="btn btn-primary" onclick="showAuthModal('login')">Login</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const myGames = games.filter(g => g.rsvps && g.rsvps.some(r => r.user_id === currentUser.id));
+
+            if (myGames.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">📋</div>
@@ -1159,24 +1521,24 @@
 
             container.innerHTML = `
                 <div class="games-grid">
-                    ${myRsvps.map(game => {
-                        const myRsvp = game.rsvps.find(r => r.name === 'You');
+                    ${myGames.map(game => {
+                        const myRsvp = game.rsvps?.find(r => r.user_id === currentUser.id);
                         const statusColors = {
                             'going': 'var(--secondary)',
                             'pending': '#f1c40f',
                             'cant-go': '#e74c3c'
                         };
                         const statusLabels = {
-                            'going': '✅ Going',
-                            'pending': '⏳ Pending',
-                            'cant-go': '❌ Can\'t Go'
+                            'going': 'Going',
+                            'pending': 'Pending',
+                            'cant-go': 'Can\'t Go'
                         };
-                        
+
                         return `
                             <div class="game-card">
                                 <div class="game-header">
-                                    <span class="game-type">${game.type}</span>
-                                    <span style="color: ${statusColors[myRsvp.status]}; font-weight: 600;">${statusLabels[myRsvp.status]}</span>
+                                    <span class="game-type">${game.game_type}</span>
+                                    <span style="color: ${statusColors[myRsvp?.status]}; font-weight: 600;">${statusLabels[myRsvp?.status] || 'Pending'}</span>
                                 </div>
                                 <h3 class="game-title">${game.name}</h3>
                                 <div class="game-meta">
@@ -1191,7 +1553,7 @@
                                 </div>
                                 <div class="game-footer">
                                     <div class="player-count">
-                                        Host: ${game.host}
+                                        Host: ${game.host_name || 'Unknown'}
                                     </div>
                                     <button class="btn btn-primary" onclick="openRsvpModal('${game.id}')">Update RSVP</button>
                                 </div>
@@ -1202,92 +1564,76 @@
             `;
         }
 
-        function openRsvpModal(gameId) {
+        async function openRsvpModal(gameId) {
             const game = games.find(g => g.id === gameId);
             if (!game) return;
 
-            const confirmedCount = game.rsvps.filter(r => r.status === 'going').length;
-            const isFull = confirmedCount >= game.maxPlayers;
+            const confirmedCount = game.going_count || 0;
+            const isFull = confirmedCount >= game.max_players;
 
             document.getElementById('modalTitle').textContent = game.name;
             document.getElementById('modalTitle').dataset.gameId = gameId;
 
-            const myRsvp = game.rsvps.find(r => r.name === currentUser);
+            const myRsvp = game.rsvps?.find(r => r.user_id === currentUser?.id);
+
+            // Build guest list from RSVPs and invites
+            let guestListHtml = '';
+            if (game.rsvps) {
+                const otherRsvps = game.rsvps.filter(r => r.user_id !== currentUser?.id);
+                guestListHtml = otherRsvps.map(rsvp => `
+                    <div class="guest-item">
+                        <span>${rsvp.display_name || 'Unknown'}</span>
+                        <span class="guest-status ${rsvp.status === 'going' ? 'confirmed' : rsvp.status === 'cant-go' ? 'declined' : 'pending'}">
+                            ${rsvp.status === 'going' ? 'confirmed' : rsvp.status === 'cant-go' ? 'declined' : 'pending'}
+                        </span>
+                    </div>
+                `).join('');
+            }
 
             document.getElementById('modalContent').innerHTML = `
                 <p style="color: var(--text-muted); margin-bottom: 20px;">${game.date} at ${formatTime(game.time)} • ${game.location}</p>
-                
+                ${game.notes ? `<p style="color: var(--text-muted); margin-bottom: 20px; font-style: italic;">${game.notes}</p>` : ''}
+
                 <div class="rsvp-buttons">
-                    <button class="rsvp-btn going ${myRsvp?.status === 'going' ? 'selected' : ''}" 
+                    <button class="rsvp-btn going ${myRsvp?.status === 'going' ? 'selected' : ''}"
                             onclick="submitRsvp('${game.id}', 'going')" ${isFull && myRsvp?.status !== 'going' ? 'style="opacity:0.5;cursor:not-allowed"' : ''}>
                         <span class="emoji">✅</span>
                         Going
                     </button>
-                    <button class="rsvp-btn cant-go ${myRsvp?.status === 'cant-go' ? 'selected' : ''}" 
+                    <button class="rsvp-btn cant-go ${myRsvp?.status === 'cant-go' ? 'selected' : ''}"
                             onclick="submitRsvp('${game.id}', 'cant-go')">
                         <span class="emoji">❌</span>
                         Can't Go
                     </button>
-                    <button class="rsvp-btn maybe ${myRsvp?.status === 'pending' ? 'selected' : ''}" 
+                    <button class="rsvp-btn maybe ${myRsvp?.status === 'pending' ? 'selected' : ''}"
                             onclick="submitRsvp('${game.id}', 'pending')">
                         <span class="emoji">⏳</span>
                         Maybe
                     </button>
                 </div>
 
-                <div class="invite-section">
-                    <h4>Invite Players</h4>
-                    <div class="invite-form">
-                        <input type="email" class="invite-input" id="inviteEmail" placeholder="friend@email.com">
-                        <button class="btn btn-secondary" onclick="addInvite('${game.id}')">Add</button>
+                ${game.host_id === currentUser?.id ? `
+                    <div class="invite-section">
+                        <h4>Invite Players</h4>
+                        <div class="invite-form">
+                            <input type="email" class="invite-input" id="inviteEmail" placeholder="friend@email.com">
+                            <button class="btn btn-secondary" onclick="handleAddInvite('${game.id}')">Add</button>
+                        </div>
+                        <div class="guest-list">
+                            ${guestListHtml || '<p style="color: var(--text-muted); font-size: 14px;">No guests yet</p>'}
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 16px;" onclick="handleSendInvites('${game.id}')">Send Invites</button>
                     </div>
-                    <div class="guest-list">
-                        ${game.invites.map(email => `
-                            <div class="guest-item">
-                                <span>${email}</span>
-                                <span class="guest-status pending">pending</span>
-                            </div>
-                        `).join('')}
-                        ${game.rsvps.filter(r => r.name !== 'You').map(rsvp => `
-                            <div class="guest-item">
-                                <span>${rsvp.name}</span>
-                                <span class="guest-status ${rsvp.status === 'going' ? 'confirmed' : rsvp.status === 'cant-go' ? 'declined' : 'pending'}">
-                                    ${rsvp.status === 'going' ? 'confirmed' : rsvp.status === 'cant-go' ? 'declined' : 'pending'}
-                                </span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    ${game.invites.length > 0 ? `<button class="btn btn-primary" style="width: 100%; margin-top: 16px;" onclick="sendInvites('${game.id}')">Send Invites</button>` : ''}
-                </div>
+                ` : ''}
             `;
 
             document.getElementById('rsvpModal').classList.add('active');
         }
 
-        function submitRsvp(gameId, status) {
-            const game = games.find(g => g.id === gameId);
-            if (!game) return;
+        // Track pending invites per game
+        const pendingInvites = {};
 
-            const existingRsvp = game.rsvps.find(r => r.name === currentUser);
-            if (existingRsvp) {
-                existingRsvp.status = status;
-            } else {
-                game.rsvps.push({ name: currentUser, status });
-            }
-
-            saveData();
-            renderGames();
-            renderMyRsvps();
-            openRsvpModal(gameId);
-            
-            const statusText = status === 'going' ? 'Going' : status === 'cant-go' ? 'Can\'t Go' : 'Maybe';
-            showToast(`RSVP updated to: ${statusText}`, 'success');
-        }
-
-        function addInvite(gameId) {
-            const game = games.find(g => g.id === gameId);
-            if (!game) return;
-
+        function handleAddInvite(gameId) {
             const emailInput = document.getElementById('inviteEmail');
             const email = emailInput.value.trim();
 
@@ -1296,38 +1642,207 @@
                 return;
             }
 
-            if (game.invites.includes(email)) {
-                showToast('Email already invited', 'error');
+            if (!pendingInvites[gameId]) {
+                pendingInvites[gameId] = [];
+            }
+
+            if (pendingInvites[gameId].includes(email)) {
+                showToast('Email already added', 'error');
                 return;
             }
 
-            game.invites.push(email);
+            pendingInvites[gameId].push(email);
             emailInput.value = '';
-            saveData();
-            openRsvpModal(gameId);
-            showToast('Guest added to invite list', 'success');
+
+            // Add to guest list UI
+            const guestList = document.querySelector('.guest-list');
+            guestList.innerHTML += `
+                <div class="guest-item">
+                    <span>${email}</span>
+                    <span class="guest-status pending">pending</span>
+                </div>
+            `;
+            showToast('Guest added', 'success');
         }
 
-        function sendInvites(gameId) {
-            const game = games.find(g => g.id === gameId);
-            if (!game || game.invites.length === 0) return;
+        function handleSendInvites(gameId) {
+            const invites = pendingInvites[gameId];
+            if (!invites || invites.length === 0) {
+                showToast('No guests to invite', 'error');
+                return;
+            }
 
-            const gameUrl = window.location.href;
-            const subject = `You're invited to ${game.name}!`;
-            const body = `Join us for poker!\n\nGame: ${game.name}\nDate: ${game.date}\nTime: ${formatTime(game.time)}\nLocation: ${game.location}\nBuy-in: ${game.buyIn}\n\nRSVP here: ${gameUrl}`;
-            
-            window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-            showToast('Email invite prepared!', 'info');
+            sendInvites(gameId, invites);
+            pendingInvites[gameId] = [];
+        }
+
+        function handleInvitePage(token) {
+            mainContent.innerHTML = `
+                <div class="invite-page">
+                    <h1>Game Invite</h1>
+                    <div class="loading"><div class="spinner"></div>Loading invite...</div>
+                </div>
+            `;
+            document.querySelector('nav').style.display = 'none';
+
+            fetch(`${API_BASE}/invites/token/${token}`)
+                .then(res => res.json())
+                .then(invite => {
+                    if (invite.error) {
+                        mainContent.innerHTML = `
+                            <div class="invite-page">
+                                <h1>Invalid Invite</h1>
+                                <p>${invite.error}</p>
+                                <a href="/" class="btn btn-primary">Go to Home</a>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    mainContent.innerHTML = `
+                        <div class="invite-page">
+                            <h1>You're Invited!</h1>
+                            <div class="game-info">
+                                <p><strong>Game:</strong> ${invite.game_name}</p>
+                                <p><strong>Date:</strong> ${invite.date}</p>
+                                <p><strong>Time:</strong> ${formatTime(invite.time)}</p>
+                                <p><strong>Location:</strong> ${invite.location}</p>
+                                <p><strong>Game Type:</strong> ${invite.game_type}</p>
+                                <p><strong>Host:</strong> ${invite.host_name}</p>
+                            </div>
+                            <div class="invite-buttons">
+                                <button class="btn btn-secondary" onclick="respondToInvite('${token}', 'declined')">Decline</button>
+                                <button class="btn btn-primary" onclick="respondToInvite('${token}', 'accepted')">Accept</button>
+                            </div>
+                        </div>
+                    `;
+                })
+                .catch(() => {
+                    mainContent.innerHTML = `
+                        <div class="invite-page">
+                            <h1>Error</h1>
+                            <p>Failed to load invite.</p>
+                            <a href="/" class="btn btn-primary">Go to Home</a>
+                        </div>
+                    `;
+                });
+        }
+
+        async function respondToInvite(token, response) {
+            try {
+                const res = await fetch(`${API_BASE}/invites/token/${token}/respond`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ response })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    showToast(data.error || 'Failed to respond', 'error');
+                    return;
+                }
+
+                showToast(response === 'accepted' ? 'Invite accepted!' : 'Invite declined', 'success');
+
+                if (!currentUser) {
+                    // Show login after accept
+                    mainContent.innerHTML = `
+                        <div class="invite-page">
+                            <h1>${response === 'accepted' ? 'See you there!' : 'Too bad!'}</h1>
+                            <p>${response === 'accepted' ? 'Login or register to save your RSVP.' : 'Maybe next time!'}</p>
+                            <button class="btn btn-primary" onclick="showAuthModal('login')">${response === 'accepted' ? 'Login' : 'Go Home'}</button>
+                        </div>
+                    `;
+                } else {
+                    window.location.href = '/';
+                }
+            } catch (err) {
+                showToast('Failed to respond to invite', 'error');
+            }
+        }
+
+        function updateStats() {
+            const upcoming = games.filter(g => new Date(g.date) >= new Date().setHours(0, 0, 0, 0));
+            const totalPlayers = upcoming.reduce((sum, g) => sum + (g.going_count || 0), 0);
+
+            const totalEl = document.getElementById('totalGames');
+            const upcomingEl = document.getElementById('upcomingGames');
+            const playersEl = document.getElementById('totalPlayers');
+
+            if (totalEl) totalEl.textContent = games.length;
+            if (upcomingEl) upcomingEl.textContent = upcoming.length;
+            if (playersEl) playersEl.textContent = totalPlayers;
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            // Nav tabs
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // Tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(btn.dataset.tab).classList.add('active');
+                });
+            });
+
+            // Create game form
+            document.getElementById('createGameForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const gameData = {
+                    name: document.getElementById('gameName').value,
+                    date: document.getElementById('gameDate').value,
+                    time: document.getElementById('gameTime').value,
+                    location: document.getElementById('gameLocation').value,
+                    maxPlayers: parseInt(document.getElementById('maxPlayers').value),
+                    buyIn: document.getElementById('buyIn').value || 'Free',
+                    gameType: document.getElementById('gameType').value,
+                    notes: document.getElementById('gameNotes').value
+                };
+
+                await createGame(gameData);
+                e.target.reset();
+                document.querySelectorAll('.tab-btn')[0].click();
+            });
+
+            // Modal close
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('rsvpModal').addEventListener('click', (e) => {
+                if (e.target.id === 'rsvpModal') closeModal();
+            });
+
+            // Auth modal
+            document.getElementById('closeAuthModal').addEventListener('click', hideAuthModal);
+            document.getElementById('authModal').addEventListener('click', (e) => {
+                if (e.target.id === 'authModal') hideAuthModal();
+            });
+
+            document.querySelectorAll('.auth-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const mode = tab.dataset.auth;
+                    showAuthModal(mode);
+                });
+            });
+
+            document.getElementById('authForm').addEventListener('submit', handleAuth);
         }
 
         function closeModal() {
             document.getElementById('rsvpModal').classList.remove('active');
         }
 
-        function isValidEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        }
-
+        // Utilities
         function formatTime(time) {
             if (!time) return '';
             const [hours, minutes] = time.split(':');
@@ -1337,13 +1852,8 @@
             return `${hour12}:${minutes} ${ampm}`;
         }
 
-        function updateStats() {
-            const upcoming = games.filter(g => new Date(g.date) >= new Date().setHours(0,0,0,0));
-            const totalPlayers = upcoming.reduce((sum, g) => sum + g.rsvps.filter(r => r.status === 'going').length, 0);
-
-            document.getElementById('totalGames').textContent = games.length;
-            document.getElementById('upcomingGames').textContent = upcoming.length;
-            document.getElementById('totalPlayers').textContent = totalPlayers;
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         }
 
         function showToast(message, type = 'info') {
@@ -1359,6 +1869,60 @@
             }, 3000);
         }
 
+        // Demo data fallback
+        function seedDemoData() {
+            const today = new Date();
+            games = [
+                {
+                    id: 'demo-1',
+                    name: 'Friday Night Hold\'em',
+                    date: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                    time: '20:00',
+                    location: '123 Poker Street, Las Vegas, NV',
+                    max_players: 8,
+                    buy_in: '$100',
+                    game_type: 'Texas Hold\'em',
+                    notes: 'Deep stack tourney, 10k starting',
+                    host_name: 'You',
+                    going_count: 2,
+                    rsvps: [
+                        { display_name: 'Alice', status: 'going' },
+                        { display_name: 'Bob', status: 'going' },
+                        { display_name: 'Charlie', status: 'pending' }
+                    ]
+                },
+                {
+                    id: 'demo-2',
+                    name: 'Sunday Omaha Cash',
+                    date: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                    time: '14:00',
+                    location: '456 Card Ave, Los Angeles, CA',
+                    max_players: 6,
+                    buy_in: '$50',
+                    game_type: 'Omaha',
+                    notes: 'Cash game, 1/2 blinds',
+                    host_name: 'Mike',
+                    going_count: 2,
+                    rsvps: [
+                        { display_name: 'You', status: 'going' },
+                        { display_name: 'Mike', status: 'going' }
+                    ]
+                }
+            ];
+            renderGames();
+            updateStats();
+        }
+
+        // Expose functions globally
+        window.showAuthModal = showAuthModal;
+        window.logout = logout;
+        window.submitRsvp = submitRsvp;
+        window.openRsvpModal = openRsvpModal;
+        window.handleAddInvite = handleAddInvite;
+        window.handleSendInvites = handleSendInvites;
+        window.respondToInvite = respondToInvite;
+
+        // Initialize
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
